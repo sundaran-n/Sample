@@ -16,7 +16,7 @@ jobs:
       - name: Set input value
         id: input  # Define an input variable (could be set dynamically or manually)
         run: |
-          echo "user_input=input1" >> $GITHUB_ENV  # Hardcoded input for demonstration (can be dynamic)
+          echo "user_input=test1" >> $GITHUB_ENV  # Hardcoded input for demonstration (can be dynamic)
 
       - name: Validate the user input
         run: |
