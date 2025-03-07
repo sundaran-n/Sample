@@ -15,15 +15,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2  # Clone the repository so we can access the files
 
-      - name: Validate if file exists
+      - name: Set folder path
         run: |
+          # Define the folder where we want to check the file
+          folder_path="realse"  # Set the folder path (change this to your folder)
           
+          # Get the filename input from the workflow_dispatch
           file_name="${{ github.event.inputs.filename }}"
 
+          # Construct the full path to the file
+          full_path="$folder_path/$file_name"
           
-          if [ -f "$file_name" ]; then
-            echo "The file '$file_name' exists in the repository."
+          # Check if the file exists in the specified folder
+          if [ -f "$full_path" ]; then
+            echo "The file '$file_name' exists in the '$folder_path' folder."
           else
-            echo "The file '$file_name' does not exist in the repository."
+            echo "The file '$file_name' does not exist in the '$folder_path' folder."
             exit 1  # Fail the workflow if the file doesn't exist
           fi
