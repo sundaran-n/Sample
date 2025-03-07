@@ -6,11 +6,10 @@ on:
       filename:
         description: 'Enter the file name to validate'
         required: true
-        default: 'README.md'  # Default value, can be changed when triggering manually
-
+        
 jobs:
   validate-file:
-    runs-on: ubuntu-latest  # Specify the virtual environment (Ubuntu)
+    runs-on: ubuntu-latest 
 
     steps:
       - name: Checkout repository
@@ -18,10 +17,10 @@ jobs:
 
       - name: Validate if file exists
         run: |
-          # Get the filename from the input parameter
+          
           file_name="${{ github.event.inputs.filename }}"
 
-          # Check if the file exists in the repository
+          
           if [ -f "$file_name" ]; then
             echo "The file '$file_name' exists in the repository."
           else
