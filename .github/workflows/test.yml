@@ -17,19 +17,18 @@ jobs:
 
       - name: Set folder path
         run: |
-          # Define the folder where we want to check the file
-          folder_path="realse"  # Set the folder path (change this to your folder)
           
-          # Get the filename input from the workflow_dispatch
+          folder_path="realse"  # Set the folder path (change this to your folder)
+        
           file_name="${{ github.event.inputs.filename }}"
 
-          # Construct the full path to the file
+          
           full_path="$folder_path/$file_name"
           
-          # Check if the file exists in the specified folder
+          
           if [ -f "$full_path" ]; then
             echo "The file '$file_name' exists in the '$folder_path' folder."
           else
             echo "The file '$file_name' does not exist in the '$folder_path' folder."
-            exit 1  # Fail the workflow if the file doesn't exist
+            exit 1  
           fi
