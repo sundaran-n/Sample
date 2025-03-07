@@ -21,7 +21,7 @@ jobs:
       - name: Validate the user input
         run: |
           # Read the valid inputs from the valid_inputs.txt file
-          valid_inputs=$(cat valid_inputs.txt)
+          valid_inputs=$(cat Input.txt)
           
           # Get the user input from the environment variable
           user_input=$USER_INPUT
