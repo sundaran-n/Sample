@@ -1,36 +1,44 @@
-# This is a basic workflow to help you get started with Actions
+name: Validate User Input
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - main  # Trigger the workflow when changes are pushed to the main branch
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+  validate-input:
+    runs-on: ubuntu-latest  # Runs on the latest Ubuntu virtual environment
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - name: Checkout the repository
+        uses: actions/checkout@v2  # Checkout the repository so the Action can access files
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Set input value
+        id: input  # Define an input variable (could be set dynamically or manually)
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          echo "user_input=input1" >> $GITHUB_ENV  # Hardcoded input for demonstration (can be dynamic)
+
+      - name: Validate the user input
+        run: |
+          # Read the valid inputs from the valid_inputs.txt file
+          valid_inputs=$(cat valid_inputs.txt)
+          
+          # Get the user input from the environment variable
+          user_input=$USER_INPUT
+          
+          # Check if the user input is in the valid inputs list
+          if echo "$valid_inputs" | grep -qx "$user_input"; then
+            echo "Valid input!"
+          else
+            echo "Invalid input!"
+            exit 1  # Fail the action if the input is invalid
+          fi
+
+      - name: Output validation result
+        run: |
+          if [ $? -eq 0 ]; then
+            echo "Input is valid!"
+          else
+            echo "Input is invalid!"
+          fi
+
