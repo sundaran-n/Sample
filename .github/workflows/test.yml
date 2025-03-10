@@ -36,6 +36,7 @@ jobs:
             exit 1  # Exit the job if the file is not found
           else
             echo "File found at: $file_path"
+            echo "::set-output name=file_path::$file_path"  # Set the file path as output
           fi
 
       # Step 4: Validate if the file has a '.txt' extension
@@ -56,6 +57,7 @@ jobs:
       # Step 5: Print the content of the file
       - name: Print file content
         run: |
+          # Access the file path output from Step 3
           file_path="${{ steps.search_file.outputs.file_path }}"
           content=$(cat "$file_path")  # Read the file content
           echo "Content of the file $file_path:"
