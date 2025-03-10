@@ -1,34 +1,59 @@
-name: Validate File Existence
+name: File Validation Workflow
 
 on:
   workflow_dispatch:
     inputs:
-      filename:
-        description: 'Enter the file name to validate'
+      file-name:
+        description: 'Enter the name of the file to validate '
         required: true
         
+
 jobs:
   validate-file:
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest  
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2  # Clone the repository so we can access the files
+      
+      - name: Checkout repository code
+        uses: actions/checkout@v2
 
-      - name: Set folder path
+     
+      - name: Get file name input
+        id: file_input
         run: |
-          
-          folder_path="realse"  # Set the folder path (change this to your folder)
-        
-          file_name="${{ github.event.inputs.filename }}"
+          echo "File name input: ${{ github.event.inputs['file-name'] }}"
 
-          
-          full_path="$folder_path/$file_name"
-          
-          
-          if [ -f "$full_path" ]; then
-            echo "The file '$file_name' exists in the '$folder_path' folder."
+      
+      - name: Check if the file exists
+        id: check_file
+        run: |
+          file_name="${{ github.event.inputs['file-name'] }}"
+          if [ -f "$file_name" ]; then
+            echo "File exists: $file_name"
           else
-            echo "The file '$file_name' does not exist in the '$folder_path' folder."
-            exit 1  
+            echo "File does not exist: $file_name"
+            exit 1  # Exit the job if the file does not exist
           fi
+
+      
+      - name: Validate file name
+        id: validate_file_name
+        run: |
+          file_name="${{ github.  event.inputs['file-name'] }}"
+          extension="${file_name##*.}"
+          
+          # Check if the file has a '.txt' extension
+          if [ "$extension" == "txt" ]; then
+            echo "File name is valid (it has a .txt extension)."
+          else
+            echo "Invalid file extension. Only .txt files are allowed."
+            exit 1  # Exit the job if the file extension is not .txt
+          fi
+
+      # Step 5: Print the content of the file if the validation passes
+      - name: Print file content
+        run: |
+          file_name="${{ github.event.inputs['file-name'] }}"
+          content=$(cat "$file_name")  # Read the file content
+          echo "Content of the file $file_name:"
+          echo "$content"
