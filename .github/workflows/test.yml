@@ -6,29 +6,29 @@ on:
       file-name:
         description: 'Enter the name of the file to validate (e.g., test.txt)'
         required: true
-        default: 'test.txt'  # Default file name to check
+       
 
 jobs:
   validate-file:
-    runs-on: ubuntu-latest  # The job will run on an Ubuntu runner
+    runs-on: ubuntu-latest  
 
     steps:
-      # Step 1: Checkout the code (so we can access the file in the repo)
+      
       - name: Checkout repository code
         uses: actions/checkout@v2
 
-      # Step 2: Get file name input (this is passed when triggering the workflow)
+     
       - name: Get file name input
         id: file_input
         run: |
           echo "File name input: ${{ github.event.inputs['file-name'] }}"
 
-      # Step 3: Search for the file recursively in the repository
+      
       - name: Search for the file in the repository
         id: search_file
         run: |
           file_name="${{ github.event.inputs['file-name'] }}"
-          # Search for the file in the entire repository
+          
           file_path=$(find . -type f -name "$file_name")
           
           if [ -z "$file_path" ]; then
@@ -39,14 +39,14 @@ jobs:
             echo "::set-output name=file_path::$file_path"  # Set the file path as output
           fi
 
-      # Step 4: Validate if the file has a '.txt' extension
+     
       - name: Validate file name
         id: validate_file_name
         run: |
           file_name="${{ github.event.inputs['file-name'] }}"
           extension="${file_name##*.}"
           
-          # Check if the file has a '.txt' extension
+          
           if [ "$extension" == "txt" ]; then
             echo "File name is valid (it has a .txt extension)."
           else
@@ -54,10 +54,10 @@ jobs:
             exit 1  # Exit the job if the file extension is not .txt
           fi
 
-      # Step 5: Print the content of the file
+      
       - name: Print file content
         run: |
-          # Access the file path output from Step 3
+          
           file_path="${{ steps.search_file.outputs.file_path }}"
           content=$(cat "$file_path")  # Read the file content
           echo "Content of the file $file_path:"
