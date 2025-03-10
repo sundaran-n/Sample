@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       file-name:
-        description: 'Enter the name of the file to validate (e.g., test.txt)'
+        description: 'Enter the name of the file to validate '
         required: true
        
 
@@ -59,6 +59,6 @@ jobs:
         run: |
           
           file_path="${{ steps.search_file.outputs.file_path }}"
-          content=$(cat "$file_path")  # Read the file content
-          echo "Content of the file $file_path:"
+          content=$(cat "$file_path")  
+          echo "$file_path:"
           echo "$content"
