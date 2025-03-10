@@ -61,4 +61,4 @@ jobs:
           file_path="${{ steps.search_file.outputs.file_path }}"
           content=$(cat "$file_path")  
           echo "$file_path:"
-          echo "$content"
+          grep "component" "$file_path" || echo "No lines with 'component' found."
