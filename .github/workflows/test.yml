@@ -56,7 +56,7 @@ jobs:
             echo "File name is valid (it has a .txt extension)."
           else
             echo "Invalid file extension. Only .txt files are allowed."
-            exit 1  # Exit the job if the file extension is not .txt
+            exit 1  
           fi
 
      
@@ -64,19 +64,12 @@ jobs:
         run: |
           
           file_path="${{ steps.search_file.outputs.file_path }}"
-          search_key="${{ github.event.inputs['search-key'] }}"  # The key to search for (e.g., component)
-
-          
+          search_key="${{ github.event.inputs['search-key'] }}" 
           echo "Searching for '$search_key' in $file_path"
           
-         
-          value=""
-          
-          
+          value=""      
           while IFS= read -r line; do
-            # Check if the line contains the search key
             if [[ "$line" == "$search_key:"* ]]; then
-              # Extract the value by removing the key and colon, and store it in the 'value' variable
               value="${line#*: }"
               break  
             fi
