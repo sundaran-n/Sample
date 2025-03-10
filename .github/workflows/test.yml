@@ -55,10 +55,31 @@ jobs:
           fi
 
       
-      - name: Print file content
+      - name: Print specific content from the file
         run: |
-          
+          # Access the file path output from Step 3
           file_path="${{ steps.search_file.outputs.file_path }}"
-          content=$(cat "$file_path")  
-          echo "$file_path:"
-          grep "component" "$file_path" || echo "No lines with 'component' found."
+          search_key="${{ github.event.inputs['search-key'] }}"  # The key to search for (e.g., component)
+
+          # Read the file and look for the key-value pair
+          echo "Searching for '$search_key' in $file_path"
+          
+          # Initialize variable to hold the value
+          value=""
+          
+          # Loop through each line in the file and check for the search_key
+          while IFS= read -r line; do
+            # Check if the line contains the search key
+            if [[ "$line" == "$search_key:"* ]]; then
+              # Extract the value by removing the key and colon, and store it in the 'value' variable
+              value="${line#*: }"
+              break  # Stop once the value is found
+            fi
+          done < "$file_path"
+
+          # Print the result
+          if [ -n "$value" ]; then
+            echo "Value for '$search_key': $value"
+          else
+            echo "Key '$search_key' not found in the file."
+          fi
