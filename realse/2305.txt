@@ -1,2 +1,2 @@
-component: catalog
+component: catalog-service
 imageversion: 990
