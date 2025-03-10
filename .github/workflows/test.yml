@@ -33,10 +33,10 @@ jobs:
           
           if [ -z "$file_path" ]; then
             echo "File not found: $file_name"
-            exit 1  # Exit the job if the file is not found
+            exit 1  
           else
             echo "File found at: $file_path"
-            echo "::set-output name=file_path::$file_path"  # Set the file path as output
+            echo "::set-output name=file_path::$file_path" 
           fi
 
      
@@ -51,7 +51,7 @@ jobs:
             echo "File name is valid (it has a .txt extension)."
           else
             echo "Invalid file extension. Only .txt files are allowed."
-            exit 1  # Exit the job if the file extension is not .txt
+            exit 1  
           fi
 
       
