@@ -1,2 +1,0 @@
-component: catalog-service
-imageversion: 990
