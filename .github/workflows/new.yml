@@ -11,12 +11,16 @@ on:
 jobs:
   read-inputs:
     runs-on: ubuntu-latest
+    outputs:
+      iteration: ${{ steps.extract.outputs.ITERATION }}
+      imagetag: ${{ steps.extract.outputs.IMAGETAG }}
+      db: ${{ steps.extract.outputs.DB }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Read Inputs from File
-        id: read_inputs
+        id: extract
         run: |
           RELEASE_VERSION=${{ inputs.release }}
           FILE_PATH="release/${RELEASE_VERSION}/input.txt"
@@ -30,15 +34,13 @@ jobs:
           IMAGETAG=$(awk '/\[IMAGETAG\]/{getline; print; getline; print}' $FILE_PATH | tr '\n' ',' | sed 's/,$//')
           DB=$(awk '/\[DB\]/{getline; print}' $FILE_PATH | tr -d '[:space:]')
 
-          echo "ITERATION=$ITERATION" >> $GITHUB_ENV
-          echo "IMAGETAG=$IMAGETAG" >> $GITHUB_ENV
-          echo "DB=$DB" >> $GITHUB_ENV
+          echo "ITERATION=$ITERATION"
+          echo "IMAGETAG=$IMAGETAG"
+          echo "DB=$DB"
 
-      - name: Show Extracted Values
-        run: |
-          echo "Iteration: $ITERATION"
-          echo "ImageTag: $IMAGETAG"
-          echo "Database: $DB"
+          echo "ITERATION=$ITERATION" >> $GITHUB_OUTPUT
+          echo "IMAGETAG=$IMAGETAG" >> $GITHUB_OUTPUT
+          echo "DB=$DB" >> $GITHUB_OUTPUT
 
   deploy:
     needs: read-inputs
@@ -46,6 +48,6 @@ jobs:
     steps:
       - name: Use Extracted Environment Variables
         run: |
-          echo "Deploying with Iteration: $ITERATION"
-          echo "Using ImageTag: $IMAGETAG"
-          echo "Connecting to DB: $DB"
+          echo "Deploying with Iteration: ${{ needs.read-inputs.outputs.iteration }}"
+          echo "Using ImageTag: ${{ needs.read-inputs.outputs.imagetag }}"
+          echo "Connecting to DB: ${{ needs.read-inputs.outputs.db }}"
