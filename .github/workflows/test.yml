@@ -3,8 +3,8 @@ name: File Validation Workflow
 on:
   workflow_dispatch:
     inputs:
-      search-key:
-        description: 'Enter the key to search in the text files'
+      iteration:
+        description: 'Enter the directory name and ITERATION value'
         required: true
         
 
@@ -17,21 +17,26 @@ jobs:
       - name: Checkout repository code
         uses: actions/checkout@v2
 
-      - name: Get search key input
+      - name: Get iteration input
         id: inputs
         run: |
-          echo "Search key input: ${{ github.event.inputs['search-key'] }}"
+          echo "Iteration input: ${{ github.event.inputs['iteration'] }}"
 
-      - name: Search directories in the release directory
+      - name: Search directories in the release directory and validate
         id: search_file
         run: |
           release_dir="release"
-          search_key="${{ github.event.inputs['search-key'] }}"
+          input_iteration="${{ github.event.inputs['iteration'] }}"  # Get the iteration input
 
           # Loop through each subdirectory (numbered directories) in the release directory
           for dir in "$release_dir"/*; do
             if [ -d "$dir" ]; then
               iteration=$(basename "$dir")  # Get the directory name, e.g., '2305'
+
+              # If directory name doesn't match the input iteration, skip
+              if [ "$iteration" != "$input_iteration" ]; then
+                continue
+              fi
 
               # Find the text file inside the numbered directory
               text_file=$(find "$dir" -type f -name "*.txt")
