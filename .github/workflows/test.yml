@@ -25,7 +25,10 @@ jobs:
         run: |
           release_dir="release"
           input_iteration="${{ github.event.inputs['iteration'] }}"  
-          
+
+          # Flag to track if the directory was found
+          directory_found=false
+
           for dir in "$release_dir"/*; do
             if [ -d "$dir" ]; then
               iteration=$(basename "$dir")  # Get the directory name, e.g., '2305'
@@ -33,7 +36,10 @@ jobs:
               if [ "$iteration" != "$input_iteration" ]; then
                 continue
               fi
-              
+
+              # Directory found, set flag to true
+              directory_found=true
+
               text_file=$(find "$dir" -type f -name "*.txt")
 
               if [ -z "$text_file" ]; then
@@ -53,7 +59,6 @@ jobs:
                 fi
               done < "$text_file"
 
-              
               if [ "$iteration_found" == "$iteration" ]; then
                 echo "ITERATION matches the directory name ($iteration). Setting environment variables."
 
@@ -61,7 +66,6 @@ jobs:
                 export IMAGETAG=$(grep 'IMAGETAG' "$text_file" | cut -d':' -f2 | xargs)
                 export DB=$(grep 'DB' "$text_file" | cut -d':' -f2 | xargs)
 
-                
                 echo "ITERATION=$ITERATION" >> $GITHUB_ENV
                 echo "IMAGETAG=$IMAGETAG" >> $GITHUB_ENV
                 echo "DB=$DB" >> $GITHUB_ENV
@@ -72,6 +76,12 @@ jobs:
               fi
             fi
           done
+
+          # Fail the workflow if no directory matches the input iteration
+          if [ "$directory_found" = false ]; then
+            echo "Error: No directory matching the input iteration '$input_iteration' found in '$release_dir'."
+            exit 1
+          fi
 
       - name: Use the environment variables and print
         run: |
