@@ -31,7 +31,7 @@ jobs:
           fi
 
           ITERATION=$(awk '/\[ITERATION\]/{getline; print}' $FILE_PATH | tr -d '[:space:]')
-          IMAGETAG=$(awk '/\[IMAGETAG\]/{getline; print; getline; print}' $FILE_PATH | tr '\n' ',' | sed 's/,$//')
+          IMAGETAG=$(awk '/\[IMAGETAG\]/ {flag=1; next} /\[DB\]/ {flag=0} flag' $FILE_PATH | tr '\n' ',' | sed 's/,$//')
           DB=$(awk '/\[DB\]/{getline; print}' $FILE_PATH | tr -d '[:space:]')
 
           echo "ITERATION=$ITERATION"
@@ -54,8 +54,8 @@ jobs:
           IFS=',' read -r -a IMAGES <<< "${{ needs.read-inputs.outputs.imagetag }}"
 
           for IMAGE in "${IMAGES[@]}"; do
-            SERVICE=$(echo $IMAGE | cut -d'_' -f1)  # Extract service name (cas, catalog)
-            TAG=$(echo $IMAGE | cut -d'_' -f2)      # Extract tag (v1, etc.)
+            SERVICE=$(echo $IMAGE | cut -d'_' -f1)  # Extract service name (cas, catalog, eureka)
+            TAG=$(echo $IMAGE | cut -d'_' -f2)      # Extract tag (v1, v2, etc.)
 
             YAML_FILE="manifest/${SERVICE}.yaml"
 
@@ -69,5 +69,10 @@ jobs:
 
       - name: Apply Kubernetes Manifests
         run: |
-          cat manifest/cas.yaml
-          cat manifest/catalog.yaml
+          for IMAGE in "${{ needs.read-inputs.outputs.imagetag }}"; do
+            SERVICE=$(echo $IMAGE | cut -d'_' -f1)
+            YAML_FILE="manifest/${SERVICE}.yaml"
+            if [ -f "$YAML_FILE" ]; then
+              kubectl apply -f "$YAML_FILE"
+            fi
+          done
