@@ -1,0 +1,51 @@
+name: Release Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Release Version"
+        required: true
+        type: string
+
+jobs:
+  read-inputs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Read Inputs from File
+        id: read_inputs
+        run: |
+          RELEASE_VERSION=${{ inputs.release }}
+          FILE_PATH="release/${RELEASE_VERSION}/input.txt"
+
+          if [ ! -f "$FILE_PATH" ]; then
+            echo "File not found: $FILE_PATH"
+            exit 1
+          fi
+
+          ITERATION=$(awk '/\[ITERATION\]/{getline; print}' $FILE_PATH)
+          IMAGETAG=$(awk '/\[IMAGETAG\]/{getline; print; getline; print}' $FILE_PATH)
+          DB=$(awk '/\[DB\]/{getline; print}' $FILE_PATH)
+
+          echo "ITERATION=$ITERATION" >> $GITHUB_ENV
+          echo "IMAGETAG=$IMAGETAG" >> $GITHUB_ENV
+          echo "DB=$DB" >> $GITHUB_ENV
+
+      - name: Show Extracted Values
+        run: |
+          echo "Iteration: $ITERATION"
+          echo "ImageTag: $IMAGETAG"
+          echo "Database: $DB"
+
+  deploy:
+    needs: read-inputs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Use Extracted Environment Variables
+        run: |
+          echo "Deploying with Iteration: $ITERATION"
+          echo "Using ImageTag: $IMAGETAG"
+          echo "Connecting to DB: $DB"
