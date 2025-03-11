@@ -1,3 +1,7 @@
-ITERATION:2305
-IMAGETAG:catalog
-DB:qwertyuiop.com
+[ITERATION]
+2305 
+[IMAGETAG] 
+catalog 
+cas 
+[DB]
+qwertyuiop.com
