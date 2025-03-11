@@ -6,44 +6,42 @@ on:
       iteration:
         description: 'Enter the directory name and ITERATION value'
         required: true
-        
 
 jobs:
   validate-file:
     runs-on: ubuntu-latest  
 
     steps:
-      
+      # Checkout the repository
       - name: Checkout repository code
         uses: actions/checkout@v2
 
+      # Get the iteration input
       - name: Get iteration input
         id: inputs
         run: |
           echo "Iteration input: ${{ github.event.inputs['iteration'] }}"
 
+      # Search directories in the release directory and validate
       - name: Search directories in the release directory and validate
         id: search_file
         run: |
           release_dir="release"
           input_iteration="${{ github.event.inputs['iteration'] }}"  # Get the iteration input
 
-
-          echo "STORED_CONTENT=" > $GITHUB_ENV
-
-         
+          # Loop through each subdirectory (numbered directories) in the release directory
           for dir in "$release_dir"/*; do
             if [ -d "$dir" ]; then
               iteration=$(basename "$dir")  # Get the directory name, e.g., '2305'
 
-              
+              # If directory name doesn't match the input iteration, skip
               if [ "$iteration" != "$input_iteration" ]; then
                 continue
               fi
 
-              
+              # Find the text file inside the numbered directory
               text_file=$(find "$dir" -type f -name "*.txt")
-              
+
               if [ -z "$text_file" ]; then
                 echo "No .txt file found in directory $dir"
                 continue
@@ -52,7 +50,7 @@ jobs:
               echo "Checking directory: $dir"
               echo "Looking for ITERATION: $iteration in the file"
 
-             
+              # Read the file and check if ITERATION matches the directory name
               iteration_found=""
               while IFS= read -r line; do
                 if [[ "$line" =~ ^ITERATION:\ *([0-9]+) ]]; then
@@ -62,30 +60,29 @@ jobs:
                 fi
               done < "$text_file"
 
-              # If ITERATION matches the directory name, store content as environment variable
+              # If ITERATION matches the directory name, set environment variables from the file
               if [ "$iteration_found" == "$iteration" ]; then
-                echo "ITERATION matches the directory name ($iteration). Storing file contents in environment variable."
+                echo "ITERATION matches the directory name ($iteration). Setting environment variables."
 
-                
-                content=""
-                while IFS= read -r line; do
-                  
-                  content="$content$line"\\n
-                done < "$text_file"
+                # Read the file again and set each value as an environment variable
+                export ITERATION=$(grep 'ITERATION' "$text_file" | cut -d':' -f2 | xargs)
+                export IMAGETAG=$(grep 'IMAGETAG' "$text_file" | cut -d':' -f2 | xargs)
+                export DB=$(grep 'DB' "$text_file" | cut -d':' -f2 | xargs)
 
-               
-                encoded_content=$(echo -n "$content" | base64)
+                # Set the environment variables for the current job
+                echo "ITERATION=$ITERATION" >> $GITHUB_ENV
+                echo "IMAGETAG=$IMAGETAG" >> $GITHUB_ENV
+                echo "DB=$DB" >> $GITHUB_ENV
 
-                
-                echo "STORED_CONTENT=$encoded_content" >> $GITHUB_ENV
               else
                 echo "ITERATION in the file does not match the directory name ($iteration). Skipping this file."
               fi
             fi
           done
 
-      - name: Decode and print the stored content
+      # Use the environment variables
+      - name: Use the environment variables
         run: |
-          echo "Printing the stored content:"
-          decoded_content=$(echo "$STORED_CONTENT" | base64 --decode)
-          echo "$decoded_content"
+          echo "Iteration: $ITERATION"
+          echo "Image Tag: $IMAGETAG"
+          echo "Database: $DB"
