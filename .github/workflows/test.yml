@@ -1,4 +1,4 @@
-name: File Validation Workflow
+  name: File Validation Workflow
 
 on:
   workflow_dispatch:
@@ -28,7 +28,7 @@ jobs:
           release_dir="release"
           input_iteration="${{ github.event.inputs['iteration'] }}"  # Get the iteration input
 
-          # Initialize environment variable to store file content
+          # Initialize environment variable to store file content (encoded)
           echo "STORED_CONTENT=" > $GITHUB_ENV
 
           # Loop through each subdirectory (numbered directories) in the release directory
@@ -66,21 +66,26 @@ jobs:
               if [ "$iteration_found" == "$iteration" ]; then
                 echo "ITERATION matches the directory name ($iteration). Storing file contents in environment variable."
 
-                # Store the content in the environment variable
+                # Store the content in the environment variable (encode it)
                 content=""
                 while IFS= read -r line; do
-                  content="$content$line"$'\n'
+                  # Replace newline characters and encode the content safely
+                  content="$content$line"\\n
                 done < "$text_file"
 
+                # Encode the content (replace problematic characters)
+                encoded_content=$(echo -n "$content" | base64)
+
                 # Set the content as an environment variable
-                echo "STORED_CONTENT=$content" >> $GITHUB_ENV
+                echo "STORED_CONTENT=$encoded_content" >> $GITHUB_ENV
               else
                 echo "ITERATION in the file does not match the directory name ($iteration). Skipping this file."
               fi
             fi
           done
 
-      - name: Print the stored content
+      - name: Decode and print the stored content
         run: |
           echo "Printing the stored content:"
-          echo "$STORED_CONTENT"
+          decoded_content=$(echo "$STORED_CONTENT" | base64 --decode)
+          echo "$decoded_content"
