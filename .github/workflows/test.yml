@@ -1,4 +1,4 @@
-  name: File Validation Workflow
+name: File Validation Workflow
 
 on:
   workflow_dispatch:
