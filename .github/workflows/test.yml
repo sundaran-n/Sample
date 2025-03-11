@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       file-name:
-        description: 'Enter the name of the file to validate '
+        description: 'Enter the name of the file to validate (must be a text file within release directory)'
         required: true
         
       search-key:
-        description: 'Enter the key '
+        description: 'Enter the key to search in the text files'
         required: true
         
 
@@ -29,13 +29,29 @@ jobs:
           echo "Search key input: ${{ github.event.inputs['search-key'] }}"
 
       
-      - name: Search for the file in the repository
-        id: search_file
+      - name: Validate file extension
+        id: validate_file_name
         run: |
           file_name="${{ github.event.inputs['file-name'] }}"
-          # Search for the file in the entire repository
-          file_path=$(find . -type f -name "$file_name")
+          extension="${file_name##*.}"
           
+          if [ "$extension" == "txt" ]; then
+            echo "File name is valid (it has a .txt extension)."
+          else
+            echo "Invalid file extension. Only .txt files are allowed."
+            exit 1  
+          fi
+
+      - name: Search for the file in the release directory
+        id: search_file
+        run: |
+          release_dir="release"
+          file_name="${{ github.event.inputs['file-name'] }}"
+          search_key="${{ github.event.inputs['search-key'] }}"
+
+          # Search for the file in the release directory and its subdirectories
+          file_path=$(find $release_dir -type f -name "$file_name")
+
           if [ -z "$file_path" ]; then
             echo "File not found: $file_name"
             exit 1  # Exit the job if the file is not found
@@ -44,40 +60,25 @@ jobs:
             echo "::set-output name=file_path::$file_path" 
           fi
 
-     
-      - name: Validate file name
-        id: validate_file_name
+      - name: Search for the search key in the found file
         run: |
-          file_name="${{ github.event.inputs['file-name'] }}"
-          extension="${file_name##*.}"
-          
-        
-          if [ "$extension" == "txt" ]; then
-            echo "File name is valid (it has a .txt extension)."
-          else
-            echo "Invalid file extension. Only .txt files are allowed."
-            exit 1  
-          fi
-
-     
-      - name: Print specific content from the file
-        run: |
-          
           file_path="${{ steps.search_file.outputs.file_path }}"
-          search_key="${{ github.event.inputs['search-key'] }}" 
+          search_key="${{ github.event.inputs['search-key'] }}"
+          
           echo "Searching for '$search_key' in $file_path"
           
-          value=""      
+          results=""
           while IFS= read -r line; do
+            # Check if the line starts with the search_key
             if [[ "$line" == "$search_key:"* ]]; then
-              value="${line#*: }"
-              break  
+              # Collect all the matching lines
+              results+="$line"$'\n'
             fi
           done < "$file_path"
 
-          
-          if [ -n "$value" ]; then
-            echo "Value for '$search_key': $value"
+          if [ -n "$results" ]; then
+            echo "Found the following values for '$search_key':"
+            echo "$results"
           else
             echo "Key '$search_key' not found in the file."
           fi
