@@ -3,12 +3,8 @@ name: File Validation Workflow
 on:
   workflow_dispatch:
     inputs:
-      file-name:
-        description: 'Enter the file to validate'
-        required: true
-        
       search-key:
-        description: 'Enter the key'
+        description: 'Enter the key to search in the text files'
         required: true
         
 
@@ -21,51 +17,52 @@ jobs:
       - name: Checkout repository code
         uses: actions/checkout@v2
 
-      
-      - name: Get file name and search key input
+      - name: Get search key input
         id: inputs
         run: |
-          echo "File name input: ${{ github.event.inputs['file-name'] }}"
           echo "Search key input: ${{ github.event.inputs['search-key'] }}"
 
-      
-     
-
-      - name: Search for the file in the release directory
+      - name: Search directories in the release directory
         id: search_file
         run: |
           release_dir="release"
-          file_name="${{ github.event.inputs['file-name'] }}"
           search_key="${{ github.event.inputs['search-key'] }}"
 
-          
-          file_path=$(find $release_dir -type f -name "$file_name")
+          # Loop through each subdirectory (numbered directories) in the release directory
+          for dir in "$release_dir"/*; do
+            if [ -d "$dir" ]; then
+              iteration=$(basename "$dir")
 
-          if [ -z "$file_path" ]; then
-            echo "File not found: $file_name"
-            exit 1  # Exit the job if the file is not found
-          else
-            echo "File found at: $file_path"
-            echo "::set-output name=file_path::$file_path" 
-          fi
+              # Find the text file inside the numbered directory
+              text_file=$(find "$dir" -type f -name "*.txt")
+              
+              if [ -z "$text_file" ]; then
+                echo "No .txt file found in directory $dir"
+                continue
+              fi
 
-      - name: Search for the search key in the found file
-        run: |
-          file_path="${{ steps.search_file.outputs.file_path }}"
-          search_key="${{ github.event.inputs['search-key'] }}"
-          
-          echo "Searching for '$search_key' in $file_path"
-          
-          results=""
-          while IFS= read -r line; do
-            if [[ "$line" == "$search_key:"* ]]; then
-              results+="$line"$'\n'
+              echo "Checking directory: $dir"
+              echo "Looking for ITERATION: $iteration in the file"
+
+              # Read the file and check if ITERATION matches the directory name
+              iteration_found=""
+              while IFS= read -r line; do
+                if [[ "$line" == "ITERATION:"* ]]; then
+                  file_iteration="${line#ITERATION: }"
+                  iteration_found="$file_iteration"
+                  break
+                fi
+              done < "$text_file"
+
+              # If ITERATION matches the directory name, print all key-value pairs from the file
+              if [ "$iteration_found" == "$iteration" ]; then
+                echo "ITERATION matches the directory name ($iteration). Printing file contents:"
+                while IFS= read -r line; do
+                  echo "$line"
+                done < "$text_file"
+              else
+                echo "ITERATION in the file does not match the directory name ($iteration). Skipping this file."
+              fi
             fi
-          done < "$file_path"
+          done
 
-          if [ -n "$results" ]; then
-            echo "Found the following values for '$search_key':"
-            echo "$results"
-          else
-            echo "Key '$search_key' not found in the file."
-          fi
