@@ -28,6 +28,9 @@ jobs:
           release_dir="release"
           input_iteration="${{ github.event.inputs['iteration'] }}"  # Get the iteration input
 
+          # Initialize environment variable to store file content
+          echo "STORED_CONTENT=" > $GITHUB_ENV
+
           # Loop through each subdirectory (numbered directories) in the release directory
           for dir in "$release_dir"/*; do
             if [ -d "$dir" ]; then
@@ -59,14 +62,25 @@ jobs:
                 fi
               done < "$text_file"
 
-              # If ITERATION matches the directory name, print all key-value pairs from the file
+              # If ITERATION matches the directory name, store content as environment variable
               if [ "$iteration_found" == "$iteration" ]; then
-                echo "ITERATION matches the directory name ($iteration). Printing file contents:"
+                echo "ITERATION matches the directory name ($iteration). Storing file contents in environment variable."
+
+                # Store the content in the environment variable
+                content=""
                 while IFS= read -r line; do
-                  echo "$line"
+                  content="$content$line"$'\n'
                 done < "$text_file"
+
+                # Set the content as an environment variable
+                echo "STORED_CONTENT=$content" >> $GITHUB_ENV
               else
                 echo "ITERATION in the file does not match the directory name ($iteration). Skipping this file."
               fi
             fi
           done
+
+      - name: Print the stored content
+        run: |
+          echo "Printing the stored content:"
+          echo "$STORED_CONTENT"
