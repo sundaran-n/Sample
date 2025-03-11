@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       file-name:
-        description: 'Enter the name of the file to validate'
+        description: 'Enter the file to validate'
         required: true
         
       search-key:
