@@ -46,8 +46,28 @@ jobs:
     needs: read-inputs
     runs-on: ubuntu-latest
     steps:
-      - name: Use Extracted Environment Variables
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Replace Image Tags in Kubernetes Manifests (No Commit)
         run: |
-          echo "Deploying with Iteration: ${{ needs.read-inputs.outputs.iteration }}"
-          echo "Using ImageTag: ${{ needs.read-inputs.outputs.imagetag }}"
-          echo "Connecting to DB: ${{ needs.read-inputs.outputs.db }}"
+          IFS=',' read -r -a IMAGES <<< "${{ needs.read-inputs.outputs.imagetag }}"
+
+          for IMAGE in "${IMAGES[@]}"; do
+            SERVICE=$(echo $IMAGE | cut -d'_' -f1)  # Extract service name (cas, catalog)
+            TAG=$(echo $IMAGE | cut -d'_' -f2)      # Extract tag (v1, etc.)
+
+            YAML_FILE="manifest/${SERVICE}.yaml"
+
+            if [ -f "$YAML_FILE" ]; then
+              echo "Updating $YAML_FILE with image tag $TAG"
+              sed -i "s|{{imagetag}}|${TAG}|g" "$YAML_FILE"
+            else
+              echo "Warning: YAML file not found for $SERVICE"
+            fi
+          done
+
+      - name: Apply Kubernetes Manifests
+        run: |
+          kubectl apply -f manifest/cas.yaml
+          kubectl apply -f manifest/catalog.yaml
