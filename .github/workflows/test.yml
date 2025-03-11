@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       file-name:
-        description: 'Enter the name of the file to validate (must be a text file within release directory)'
+        description: 'Enter the name of the file to validate'
         required: true
         
       search-key:
-        description: 'Enter the key to search in the text files'
+        description: 'Enter the key'
         required: true
         
 
@@ -29,18 +29,7 @@ jobs:
           echo "Search key input: ${{ github.event.inputs['search-key'] }}"
 
       
-      - name: Validate file extension
-        id: validate_file_name
-        run: |
-          file_name="${{ github.event.inputs['file-name'] }}"
-          extension="${file_name##*.}"
-          
-          if [ "$extension" == "txt" ]; then
-            echo "File name is valid (it has a .txt extension)."
-          else
-            echo "Invalid file extension. Only .txt files are allowed."
-            exit 1  
-          fi
+     
 
       - name: Search for the file in the release directory
         id: search_file
@@ -49,7 +38,7 @@ jobs:
           file_name="${{ github.event.inputs['file-name'] }}"
           search_key="${{ github.event.inputs['search-key'] }}"
 
-          # Search for the file in the release directory and its subdirectories
+          
           file_path=$(find $release_dir -type f -name "$file_name")
 
           if [ -z "$file_path" ]; then
@@ -69,9 +58,7 @@ jobs:
           
           results=""
           while IFS= read -r line; do
-            # Check if the line starts with the search_key
             if [[ "$line" == "$search_key:"* ]]; then
-              # Collect all the matching lines
               results+="$line"$'\n'
             fi
           done < "$file_path"
