@@ -1,7 +1,8 @@
 [ITERATION]
 2305 
 [IMAGETAG] 
-catalog 
-cas 
+catalog_v1
+cas_v2
+eureka_v1
 [DB]
 qwertyuiop.com
