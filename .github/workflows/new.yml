@@ -26,9 +26,9 @@ jobs:
             exit 1
           fi
 
-          ITERATION=$(awk '/\[ITERATION\]/{getline; print}' $FILE_PATH)
-          IMAGETAG=$(awk '/\[IMAGETAG\]/{getline; print; getline; print}' $FILE_PATH)
-          DB=$(awk '/\[DB\]/{getline; print}' $FILE_PATH)
+          ITERATION=$(awk '/\[ITERATION\]/{getline; print}' $FILE_PATH | tr -d '[:space:]')
+          IMAGETAG=$(awk '/\[IMAGETAG\]/{getline; print; getline; print}' $FILE_PATH | tr '\n' ',' | sed 's/,$//')
+          DB=$(awk '/\[DB\]/{getline; print}' $FILE_PATH | tr -d '[:space:]')
 
           echo "ITERATION=$ITERATION" >> $GITHUB_ENV
           echo "IMAGETAG=$IMAGETAG" >> $GITHUB_ENV
