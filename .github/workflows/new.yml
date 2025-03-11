@@ -69,5 +69,5 @@ jobs:
 
       - name: Apply Kubernetes Manifests
         run: |
-          kubectl apply -f manifest/cas.yaml
-          kubectl apply -f manifest/catalog.yaml
+          cat manifest/cas.yaml
+          cat manifest/catalog.yaml
