@@ -31,7 +31,7 @@ jobs:
           # Loop through each subdirectory (numbered directories) in the release directory
           for dir in "$release_dir"/*; do
             if [ -d "$dir" ]; then
-              iteration=$(basename "$dir")
+              iteration=$(basename "$dir")  # Get the directory name, e.g., '2305'
 
               # Find the text file inside the numbered directory
               text_file=$(find "$dir" -type f -name "*.txt")
@@ -47,8 +47,8 @@ jobs:
               # Read the file and check if ITERATION matches the directory name
               iteration_found=""
               while IFS= read -r line; do
-                if [[ "$line" == "ITERATION:"* ]]; then
-                  file_iteration="${line#ITERATION: }"
+                if [[ "$line" =~ ^ITERATION:\ *([0-9]+) ]]; then
+                  file_iteration="${BASH_REMATCH[1]}"  # Extract the ITERATION value
                   iteration_found="$file_iteration"
                   break
                 fi
@@ -65,4 +65,3 @@ jobs:
               fi
             fi
           done
-
