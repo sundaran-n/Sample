@@ -1,0 +1,203 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: customer-360-rabbitmq-config
+  namespace: "default"
+data:
+  enabled_plugins: |
+      [rabbitmq_management,rabbitmq_peer_discovery_k8s,rabbitmq_consistent_hash_exchange,rabbitmq_federation,rabbitmq_federation_management,rabbitmq_shovel,rabbitmq_shovel_management,rabbitmq_stomp].
+
+  rabbitmq.conf: |
+      cluster_formation.peer_discovery_backend  = rabbit_peer_discovery_k8s
+      cluster_formation.k8s.host = kubernetes.default.svc.cluster.local      
+      cluster_formation.k8s.address_type = hostname      
+      cluster_formation.node_cleanup.interval = 60      
+      cluster_formation.node_cleanup.only_log_warning = false
+      cluster_partition_handling = autoheal
+      queue_master_locator=min-masters
+      loopback_users = none
+      listeners.tcp.default = 5672
+      hipe_compile = false
+      stomp.default_user = nslcif
+      stomp.default_pass = nslcif789#
+      stomp.listeners.tcp.1 = 61613
+      management.tcp.port = 15672
+      management.path_prefix = /customer360-rabbitmq
+      management.load_definitions = /etc/rabbitmq/definitions.json
+      
+  definitions.json: |
+    {
+      "users": [
+        {
+          "name": "nslcif",
+          "password": "nslcif789#",
+          "tags": "administrator"
+        }
+      ],
+      "permissions": [
+        {
+          "configure": ".*",
+          "read": ".*",
+          "user": "nslcif",
+          "vhost": "/",
+          "write": ".*"
+        }
+      ],
+      "policies": [
+        {
+          "apply-to": "all",
+          "definition": {
+            "ha-mode": "all",
+            "ha-sync-mode": "automatic"
+          },
+          "name": "ha-all",
+          "pattern": ".",
+          "priority": 0,
+          "vhost": "/"
+        }
+      ],
+      "vhosts": [
+        {
+          "name": "/"
+        }
+      ]
+    }
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: customer-360-rabbitmq
+  namespace: "default"
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: customer-360-rabbitmq-peer-discovery-rbac
+  namespace: "default"
+rules:
+- apiGroups: [""]
+  resources: ["endpoints"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: customer-360-rabbitmq-peer-discovery-rbac
+  namespace: "default"
+subjects:
+- kind: ServiceAccount
+  name: customer-360-rabbitmq
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: customer-360-rabbitmq-peer-discovery-rbac
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: customer-360-rabbitmq
+  name: customer-360-rabbitmq
+  namespace: "default"
+spec:
+  ports:
+  - name: http-port
+    port: 8013
+    protocol: TCP
+    targetPort: 15672
+  - name: amqp-port
+    port: 8014
+    protocol: TCP
+    targetPort: 5672
+  - name: stomp
+    port: 61613
+    protocol: TCP
+    targetPort: 61613
+  selector:
+    app: customer-360-rabbitmq
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: customer-360-rabbitmq
+  namespace: "default"
+spec:
+  serviceName: customer-360-rabbitmq
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customer-360-rabbitmq
+  template:
+    metadata:
+      labels:
+        app: customer-360-rabbitmq
+    spec:
+      serviceAccountName: customer-360-rabbitmq
+      terminationGracePeriodSeconds: 10
+      nodeSelector:
+        kubernetes.io/os: linux
+      containers:
+      - name: rabbitmq-k8s
+        image: 953432264391.dkr.ecr.us-east-1.amazonaws.com/rd/product:rabbitmq-3.12.14-alpine
+        volumeMounts:
+          - name: config-volume
+            mountPath: /etc/rabbitmq
+        ports:
+          - name: http
+            protocol: TCP
+            containerPort: 15672
+          - name: amqp
+            protocol: TCP
+            containerPort: 5672
+          - name: stomp
+            protocol: TCP
+            containerPort: 61613
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+        imagePullPolicy: Always
+        env:
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: RABBITMQ_USE_LONGNAME
+            value: "true"
+          - name: K8S_SERVICE_NAME
+            value: customer-360-rabbitmq
+          - name: RABBITMQ_NODENAME
+            value: rabbit@$(MY_POD_NAME).$(K8S_SERVICE_NAME).$(MY_POD_NAMESPACE).svc.cluster.local
+          - name: K8S_HOSTNAME_SUFFIX
+            value: .$(K8S_SERVICE_NAME).$(MY_POD_NAMESPACE).svc.cluster.local
+          - name: RABBITMQ_ERLANG_COOKIE
+            value: "mycookie"
+          - name: RABBITMQ_DEFAULT_USER
+            value: "customer360"
+          - name: RABBITMQ_DEFAULT_PASS
+            value: "customer360#"
+      imagePullSecrets:
+      - name: ecrcred
+      volumes:
+        - name: config-volume
+          configMap:
+            name: customer-360-rabbitmq-config
+            items:
+            - key: rabbitmq.conf
+              path: rabbitmq.conf
+            - key: enabled_plugins
+              path: enabled_plugins
+            - key: definitions.json
+              path: definitions.json
