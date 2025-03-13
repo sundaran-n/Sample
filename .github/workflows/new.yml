@@ -86,7 +86,8 @@ jobs:
 
       - name: Apply Kubernetes Manifests
         run: |
-          for IMAGE in "${{ needs.read-inputs.outputs.imagetag }}"; do
+          IFS=',' read -r -a IMAGES <<< "${{ needs.read-inputs.outputs.imagetag }}"
+          for IMAGE in "${IMAGES[@]}"; do
             SERVICE=$(echo $IMAGE | cut -d'_' -f1)
             YAML_FILE="manifest/${SERVICE}.yaml"
             if [ -f "$YAML_FILE" ]; then
