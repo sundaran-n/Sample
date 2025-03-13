@@ -2,6 +2,5 @@
 2305 
 [IMAGETAG] 
 om-rabbitmq_i2305_r9000_b12
-om_i2305_r9000_b12
 [DB]
 qwertyuiop.com
