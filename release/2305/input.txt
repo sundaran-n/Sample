@@ -1,8 +1,6 @@
 [ITERATION]
 2305 
 [IMAGETAG] 
-catalog_v1
-cas_v2
-eureka_v1
+om-rabbitmq_i2305_r9000_b12
 [DB]
 qwertyuiop.com
