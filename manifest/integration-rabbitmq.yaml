@@ -133,7 +133,7 @@ spec:
         kubernetes.io/os: linux
       containers:
       - name: rabbitmq-k8s
-        image: 953432264391.dkr.ecr.us-east-1.amazonaws.com/rd/product:rabbitmq-3.12.14-alpine
+        image: 953432264391.dkr.ecr.us-east-1.amazonaws.com/rd/product:{{imagetag}}
         volumeMounts:
           - name: config-volume
             mountPath: /etc/rabbitmq
