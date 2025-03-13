@@ -86,11 +86,10 @@ jobs:
 
       - name: Apply Kubernetes Manifests
         run: |
-          kubectl get pod -A
-        #  for IMAGE in "${{ needs.read-inputs.outputs.imagetag }}"; do
-        #    SERVICE=$(echo $IMAGE | cut -d'_' -f1)
-        #    YAML_FILE="manifest/${SERVICE}.yaml"
-        #    if [ -f "$YAML_FILE" ]; then
-        #      kubectl apply -f "$YAML_FILE"
-        #    fi
-         # done
+          for IMAGE in "${{ needs.read-inputs.outputs.imagetag }}"; do
+            SERVICE=$(echo $IMAGE | cut -d'_' -f1)
+            YAML_FILE="manifest/${SERVICE}.yaml"
+            if [ -f "$YAML_FILE" ]; then
+              kubectl apply -f "$YAML_FILE"
+            fi
+          done
