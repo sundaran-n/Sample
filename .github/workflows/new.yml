@@ -45,10 +45,27 @@ jobs:
   deploy:
     needs: read-inputs
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write 
+      contents: read 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+      
+      - name: Request OIDC Token
+        run: |
+          echo "Fetching OIDC Token..."
+          curl -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL"
 
+      - name: Configure AWS Account
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::977186631846:role/GitHubActionsEKSRole
+          aws-region: us-east-2
+ 
+      - name: Update Kubeconfig
+        run: aws eks update-kubeconfig --name naapdev --region us-east-2
+        
       - name: Replace Image Tags in Kubernetes Manifests (No Commit)
         run: |
           IFS=',' read -r -a IMAGES <<< "${{ needs.read-inputs.outputs.imagetag }}"
