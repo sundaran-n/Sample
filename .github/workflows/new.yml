@@ -64,7 +64,7 @@ jobs:
           aws-region: us-east-2
  
       - name: Update Kubeconfig
-        run: aws eks update-kubeconfig --name naapdev --region us-east-2
+        run: aws eks update-kubeconfig --name stardust --region us-east-1
         
       - name: Replace Image Tags in Kubernetes Manifests (No Commit)
         run: |
